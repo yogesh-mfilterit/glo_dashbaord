@@ -1,0 +1,21 @@
+{
+  "name": "mtn-nigeria-tools",
+  "version": "1.0.0",
+  "description": "Utility tools for MTN Nigeria data processing",
+  "main": "dynamodb-processor.js",
+  "scripts": {
+    "process": "node dynamodb-processor.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/util-dynamodb": "^3.0.0"
+  },
+  "keywords": [
+    "dynamodb",
+    "data-processing",
+    "mtn-nigeria"
+  ],
+  "author": "",
+  "license": "ISC"
+} 
