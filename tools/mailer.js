@@ -1,15 +1,19 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 import { getSubscriptionsBySubscriptionId } from "../app/lib/dynamodb-subscription";
 import { getAllServiceIdDeatilsByServiceId } from "../app/lib/dynamodb-serviceid";
 
-const FROM_ADDRESS = 'mFilterIt <report@mfilterit.com>';
-const GLO_TEAM = '';
+const FROM_ADDRESS = "mFilterIt <report@mfilterit.com>";
+const GLO_TEAM = "";
 
-const CP_SUBJECT = 'Alert: CP has raised a new product request!';
+const CP_SUBJECT = "Alert: CP has raised a new product request!";
 const SUBJECT_GLO_RESPONSE = (status) =>
-  status === 'Approved'
-    ? 'Glo has approved your product submission!'
-    : status === 'Suspended' ? 'Glo has suspended your product submission.' : status === 'Resumed' ? 'Glo has resumed your product — service is now LIVE.' : 'Glo has rejected your product submission.';
+  status === "Approved"
+    ? "Glo has approved your product submission!"
+    : status === "Suspended"
+    ? "Glo has suspended your product submission."
+    : status === "Resumed"
+    ? "Glo has resumed your product — service is now LIVE."
+    : "Glo has rejected your product submission.";
 
 export async function getServiceName(serviceId) {
   const services = await getAllServiceIdDeatilsByServiceId(serviceId);
@@ -31,9 +35,7 @@ async function sendEmail(data) {
     ? await getSubscriptionsBySubscriptionId(serviceId)
     : [];
   const approvedLiveSubscriptions = allSubscriptions.filter(
-    (item) =>
-      item.isLive === true &&
-      item.serviceId === serviceId
+    (item) => item.isLive === true && item.serviceId === serviceId,
   );
   const orderedProducts = [];
 
@@ -49,14 +51,25 @@ async function sendEmail(data) {
   });
 
   enrichedData.productDetails = orderedProducts.map((item, index) => ({
-    productName: `${item.subscriptionName} (${item.subscriptionValidityDuration} ${item.subscriptionValidityUnit}${item.subscriptionValidityDuration > 1 ? 's' : ''})`,
+    productName: `${item.subscriptionName} (${
+      item.subscriptionValidityDuration
+    } ${item.subscriptionValidityUnit}${
+      item.subscriptionValidityDuration > 1 ? "s" : ""
+    })`,
     // If you want to use a real link later, replace 'url' with your dynamic URL logic
-    activationUrl: item.activationUrl || 'url',
+    activationUrl: item.activationUrl || "url",
+    isLatest: item.subscriptionDescription === data.subscriptionDescription,
   }));
 
-  const HTML_CONTENT = enrichedData?.userType === "cp" ? cp_html_content(enrichedData) : cp_glo_response_html_content(enrichedData);
-  const SUBJECT = enrichedData?.userType === "cp" ? CP_SUBJECT : SUBJECT_GLO_RESPONSE(enrichedData?.status);
-  
+  const HTML_CONTENT =
+    enrichedData?.userType === "cp"
+      ? cp_html_content(enrichedData)
+      : cp_glo_response_html_content(enrichedData);
+  const SUBJECT =
+    enrichedData?.userType === "cp"
+      ? CP_SUBJECT
+      : SUBJECT_GLO_RESPONSE(enrichedData?.status);
+
   try {
     const smtpTransport = nodemailer.createTransport({
       host: "email-smtp.ap-south-1.amazonaws.com",
@@ -68,19 +81,15 @@ async function sendEmail(data) {
       },
     });
 
-    const gloEmail = [
-      'user1@glo.com',
-      'user2@glo.com'
-    ];
+    const gloEmail = ["user1@glo.com", "user2@glo.com"];
     const cpEmail = data?.cpEmail;
 
-    const toAddress = data?.userType === "cp"
-      ? gloEmail           // When CP submits, notify Glo team
-      : cpEmail;           // When Glo responds, notify CP
+    const toAddress =
+      data?.userType === "cp"
+        ? gloEmail // When CP submits, notify Glo team
+        : cpEmail; // When Glo responds, notify CP
 
-    const cc = [
-      "sahil.kumar@mfilterit.com",
-    ];
+    const cc = ["sahil.kumar@mfilterit.com"];
 
     const mailOptions = {
       from: FROM_ADDRESS,
@@ -99,202 +108,153 @@ async function sendEmail(data) {
   }
 }
 
-const cp_html_content = (data) => {
-  return `
-  <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f3f1; padding: 40px 20px; color: #1f2937;">
-    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;">
-      
-      <!-- Header -->
-      <div style="background: linear-gradient(135deg, #047857 0%, #065f46 100%); color: #ffffff; padding: 24px 30px; text-align: left;">
-        <h2 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em;">New Product Created</h2>
-        <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.9;">Glo Nigeria Management Portal</p>
-      </div>
-
-      <!-- Body -->
-      <div style="padding: 30px;">
-        <p style="margin-top: 0; font-size: 15px; color: #374151;">Hi Team,</p>
-        <p style="font-size: 14px; color: #4b5563; line-height: 1.6;">
-          A new product has been created by a <strong>Content Partner</strong>. Please review the details below and take necessary action (<strong>Approve</strong> or <strong>Reject</strong>) after verification.
-        </p>
-
-        <!-- Table Container -->
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
-          <tr style="background-color: #f9fafb;">
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 13px; color: #4b5563; width: 40%;">Content Partner Name:</td>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #111827;">${data.cpName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 13px; color: #4b5563;">Product Name:</td>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #111827;">${data.subscriptionName}</td>
-          </tr>
-          <tr style="background-color: #f9fafb;">
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 13px; color: #4b5563;">Product Validity:</td>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #111827;">${data.subscriptionValidity}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 16px; font-weight: 600; font-size: 13px; color: #4b5563;">Price:</td>
-            <td style="padding: 12px 16px; font-size: 13px; color: #111827; font-weight: 600; color: #047857;">₦${data.price}</td>
-          </tr>
-        </table>
-
-        <p style="margin-top: 24px; font-size: 13px; color: #6b7280;">
-          Kindly ensure that the product complies with all required guidelines before approval.
-        </p>
-
-        <!-- CTA Button -->
-        <div style="margin-top: 24px; text-align: center;">
-          <a href="https://glo-nigeria-dashboard.mfilterit.org/login" 
-            style="display: inline-block; padding: 12px 32px; background-color: #059669; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);">
-            Go to Dashboard
-          </a>
-        </div>
-
-        <p style="margin-top: 35px; font-size: 13px; color: #4b5563; border-top: 1px solid #e5e7eb; paddingTop: 20px;">
-          Best regards,<br/><strong style="color: #111827;">mFilterIt Automated Notification</strong>
-        </p>
-      </div>
-
-      <!-- Footer -->
-      <div style="background-color: #f9fafb; text-align: center; padding: 14px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb;">
-        © ${new Date().getFullYear()} MFILTERIT. All rights reserved.
-      </div>
-    </div>
-  </div>
-  `;
+/* ================================================================== */
+/*  EMAIL DESIGN (only this part changed)                              */
+/*  simple, table based, inline styles — works in Gmail / Outlook      */
+/* ================================================================== */
+const FONT = "Arial, Helvetica, sans-serif";
+const GREEN = "#047857";
+const DASHBOARD_URL = "https://glo-nigeria-dashboard.mfilterit.org/login";
+const STATUS_COLOR = {
+  Approved: "#047857",
+  Resumed: "#047857",
+  Suspended: "#b45309",
+  Rejected: "#b91c1c",
 };
 
+const esc = (v) =>
+  String(v ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
+        c
+      ]),
+  );
+const safeUrl = (u) => (/^https?:\/\//i.test(String(u || "")) ? esc(u) : "");
+
+const layout = (title, content) => `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f5f7;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;font-family:${FONT};color:#374151;font-size:14px;line-height:1.6;">
+    <tr><td style="padding:20px 28px;border-bottom:3px solid ${GREEN};font-size:12px;color:#6b7280;">
+      <strong style="color:#111827;">mFilterIt</strong> &nbsp;|&nbsp; Glo Nigeria Portal
+    </td></tr>
+    <tr><td style="padding:28px;">
+      <h2 style="margin:0 0 18px;font-size:20px;line-height:1.3;color:#111827;font-weight:600;">${esc(
+        title,
+      )}</h2>
+      ${content}
+      <p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #e5e7eb;">Best regards,<br><strong style="color:#111827;">mFilterIt Team</strong></p>
+    </td></tr>
+    <tr><td style="padding:14px 28px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center;">
+      Automated message, please do not reply. &copy; ${new Date().getFullYear()} MFILTERIT
+    </td></tr>
+  </table>
+</td></tr></table>`;
+
+/** rows: [[label, safeHtmlValue], ...] */
+const table = (rows) =>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e5e7eb;border-collapse:collapse;">${rows
+    .filter(Boolean)
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;width:36%;background:#f9fafb;font-size:13px;color:#6b7280;">${esc(
+          k,
+        )}</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#111827;">${v}</td></tr>`,
+    )
+    .join("")}</table>`;
+
+const button = (href, label) =>
+  `<p style="margin:24px 0 0;"><a href="${safeUrl(
+    href,
+  )}" target="_blank" style="display:inline-block;padding:11px 24px;background:${GREEN};color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">${esc(
+    label,
+  )}</a></p>`;
+
+const link = (url) =>
+  `<a href="${safeUrl(
+    url,
+  )}" target="_blank" style="color:${GREEN};word-break:break-all;">${esc(
+    url,
+  )}</a>`;
+
+// CP raised a product -> Glo team
+const cp_html_content = (data) =>
+  layout(
+    "New product request",
+    `
+    <p style="margin:0 0 14px;">Hi Team,</p>
+    <p style="margin:0 0 18px;">A Content Partner has created a new product. Please review the details and <strong>approve</strong> or <strong>reject</strong> it.</p>
+    ${table([
+      ["Content Partner", esc(data.cpName)],
+      data.serviceIdName ? ["Service", esc(data.serviceIdName)] : null,
+      ["Product", esc(data.subscriptionName)],
+      ["Validity", esc(data.subscriptionValidity)],
+      ["Price", `<strong>&#8358;${esc(data.price)}</strong>`],
+    ])}
+    ${button(DASHBOARD_URL, "Go to dashboard")}`,
+  );
+
+// Glo decision -> CP
 const cp_glo_response_html_content = (data) => {
-  const statusColor = data.status === 'Approved' || data.status === 'Resumed' ? '#059669' : '#dc2626';
-  
-  return `
-  <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f3f1; padding: 40px 20px; color: #1f2937;">
-    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;">
+  const color = STATUS_COLOR[data.status] || "#374151";
+  const decision = `<strong style="color:${color};">${esc(
+    data.status,
+  )}</strong>`;
 
-      <!-- Header -->
-      <div style="background: linear-gradient(135deg, #047857 0%, #065f46 100%); color: #ffffff; padding: 24px 30px; text-align: left;">
-        <h2 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em;">Glo Review Update — Product Status</h2>
-        <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.9;">Management Portal Notification</p>
-      </div>
+  const message =
+    {
+      Approved: "Your product has been approved and will be LIVE shortly.",
+      Resumed: "Your service has been restored and is now LIVE.",
+      Suspended:
+        "Your product has been suspended and the service is temporarily inactive.",
+    }[data.status] ||
+    "Your product has been rejected. Please make the necessary corrections before resubmitting.";
 
-      <!-- Body -->
-      <div style="padding: 30px;">
-        <p style="margin-top: 0; font-size: 15px; color: #374151;">Dear <strong>${data.cpName}</strong>,</p>
+  let details;
+  if (data.status === "Approved") {
+    const masterUrl = `http://glo-nigeria-prod.mfilterit.org/sid/${encodeURIComponent(
+      data.serviceId || data.serviceID || "",
+    )}?trfsrc=`;
+    details = table([
+      ["Decision", decision],
+      ["Master URL", link(masterUrl)],
+      ...(data.productDetails || []).map((p) => [
+        p.isLatest ? `${p.productName} (new)` : p.productName,
+        p.activationUrl && p.activationUrl !== "url" && safeUrl(p.activationUrl)
+          ? link(p.activationUrl)
+          : '<span style="color:#9ca3af;">Pending activation</span>',
+      ]),
+    ]);
+  } else {
+    details = table([
+      ["Product", esc(data.subscriptionName)],
+      ["Validity", esc(data.subscriptionValidity)],
+      ["Decision", decision],
+      data.status === "Suspended"
+        ? [
+            "Suspension reason",
+            esc(data.suspendReason || "No reason provided by Glo."),
+          ]
+        : null,
+      data.status === "Rejected"
+        ? [
+            "Rejection reason",
+            esc(data.rejectionReason || "No reason provided by Glo."),
+          ]
+        : null,
+    ]);
+  }
 
-        <p style="margin: 12px 0 20px; font-size: 13px; line-height: 1.6; color: #4b5563;">
-          This is to inform you that your product submission for the service <strong>${data.serviceIdName || 'your service'}</strong> has been reviewed by <strong>Glo Nigeria</strong>. Please find the final decision below.
-        </p>
-
-        <!-- Response Details Table -->
-        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
-          
-          ${data.status === 'Approved' ? `
-            <tr style="background-color: #f9fafb;">
-              <td colspan="2" style="padding: 12px 16px; font-weight: 600; text-align: center; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #047857;">
-                Product Details & Links
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 12px; color: #4b5563; width: 35%;">Master URL:</td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-size: 12px; word-break: break-all;">
-                <a href="http://glo-nigeria-prod.mfilterit.org/sid/${encodeURIComponent(data.serviceID || '')}?trfsrc="
-                   target="_blank" style="color: #059669; text-decoration: underline;">
-                  http://glo-nigeria-prod.mfilterit.org/sid/${encodeURIComponent(data.serviceID || '')}?trfsrc=
-                </a>
-              </td>
-            </tr>
-
-            ${data.productDetails.map(product => `
-              <tr>
-                <td colspan="2" style="padding: 10px 16px; border-bottom: 1px solid #e5e7eb; background-color: ${product.isLatest ? '#ecfdf5' : '#ffffff'};">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                    <tr>
-                      <td style="padding: 4px 0; font-weight: 600; color: #4b5563; width: 35%;">Name:</td>
-                      <td style="padding: 4px 0; color: #111827;">
-                        ${product.productName}
-                        ${product.isLatest ? '<span style="color: #059669; font-weight: bold;"> (NEW)</span>' : ''}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 4px 0; font-weight: 600; color: #4b5563;">Plan ID URL:</td>
-                      <td style="padding: 4px 0; word-break: break-all;">
-                        ${product.activationUrl && product.activationUrl !== 'url' ? `
-                          <a href="${product.activationUrl}" target="_blank" style="color: #059669; text-decoration: underline;">
-                            ${product.activationUrl}
-                          </a>
-                        ` : `
-                          <span style="color: #9ca3af; font-style: italic;">Pending activation / Coming soon</span>
-                        `}
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            `).join('')}
-          ` : ''}
-
-          ${['Suspended', 'Resumed', 'Rejected'].includes(data.status) ? `
-            <tr style="background-color: #f9fafb;">
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 12px; color: #4b5563; width: 35%;">Product Name:</td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #111827;">${data.subscriptionName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 12px; color: #4b5563;">Product Validity:</td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #111827;">${data.subscriptionValidity}</td>
-            </tr>
-          ` : ''}
-
-          <tr>
-            <td style="padding: 12px 16px; font-weight: 600; font-size: 12px; color: #4b5563; border-bottom: 1px solid #e5e7eb;">Glo Decision:</td>
-            <td style="padding: 12px 16px; font-size: 12px; border-bottom: 1px solid #e5e7eb;">
-              <span style="font-weight: 700; color: ${statusColor};">
-                ${data.status}
-              </span>
-            </td>
-          </tr>
-
-          ${data.status === 'Suspended' ? `
-            <tr style="background-color: #fef2f2;">
-              <td style="padding: 12px 16px; font-weight: 600; font-size: 12px; color: #991b1b;">Suspension Reason:</td>
-              <td style="padding: 12px 16px; font-size: 12px; color: #991b1b;">
-                ${data.suspendReason || 'No reason provided by Glo.'}
-              </td>
-            </tr>
-          ` : ''}
-
-          ${data.status === 'Rejected' ? `
-            <tr style="background-color: #fef2f2;">
-              <td style="padding: 12px 16px; font-weight: 600; font-size: 12px; color: #991b1b;">Rejection Reason:</td>
-              <td style="padding: 12px 16px; font-size: 12px; color: #991b1b;">
-                ${data.rejectionReason || 'No reason provided by Glo.'}
-              </td>
-            </tr>
-          ` : ''}
-        </table>
-
-        <!-- Summary Status Message -->
-        <p style="margin-top: 20px; font-size: 13px; color: #4b5563; line-height: 1.5;">
-          ${data.status === 'Approved'
-            ? `Congratulations! Your product has been <strong>approved</strong> by Glo and will be LIVE shortly.`
-            : data.status === 'Suspended'
-              ? `Your product has been <strong>suspended</strong> by Glo. The service is temporarily inactive. Please review the suspension reason above.`
-              : data.status === 'Resumed'
-                ? `Your service has been <strong>restored</strong> by Glo and is now <strong>LIVE</strong> on the platform.`
-                : `Unfortunately, your product has been <strong>rejected</strong> by Glo. Please review the rejection reason above and make necessary corrections before resubmitting.`
-          }
-        </p>
-
-        <p style="margin-top: 30px; font-size: 13px; color: #4b5563; border-top: 1px solid #e5e7eb; paddingTop: 20px;">
-          Best regards,<br/><strong style="color: #111827;">mFilterIt Operations Team</strong>
-        </p>
-      </div>
-
-      <!-- Footer -->
-      <div style="background-color: #f9fafb; text-align: center; padding: 14px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb;">
-        © ${new Date().getFullYear()} MFILTERIT. All rights reserved.
-      </div>
-    </div>
-  </div>
-  `;
+  return layout(
+    "Product status update",
+    `
+    <p style="margin:0 0 14px;">Dear <strong>${esc(data.cpName)}</strong>,</p>
+    <p style="margin:0 0 18px;">Your product submission for <strong>${esc(
+      data.serviceIdName || "your service",
+    )}</strong> has been reviewed by Glo Nigeria. ${message}</p>
+    ${details}`,
+  );
 };
 
 // OTP email function
@@ -313,40 +273,27 @@ export async function sendOtpEmail(email, otp) {
     const mailOptions = {
       from: FROM_ADDRESS,
       to: email,
-      subject: 'Your OTP for Glo Nigeria Dashboard',
+      subject: "Your OTP for Glo Nigeria Dashboard",
       text: `Your OTP is: ${otp}\n\nThis code will expire in 2 minutes.\n\nPlease do not share this code with anyone.`,
-      html: `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f3f1; padding: 40px 20px; color: #1f2937;">
-          <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;">
-            
-            <div style="background: linear-gradient(135deg, #047857 0%, #065f46 100%); color: #ffffff; padding: 24px 30px; text-align: left;">
-              <h2 style="margin: 0; font-size: 20px; font-weight: 600;">Authentication Required</h2>
-              <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.9;">Glo Nigeria Dashboard Verification</p>
-            </div>
-
-            <div style="padding: 35px 30px; text-align: center;">
-              <p style="font-size: 15px; color: #4b5563; margin-bottom: 10px;">Your One-Time Password (OTP) is:</p>
-              
-              <div style="font-size: 36px; font-weight: 700; color: #047857; margin: 20px 0; letter-spacing: 6px; background-color: #f0fdf4; display: inline-block; padding: 12px 24px; border-radius: 12px; border: 1px dashed #059669;">
-                ${otp}
-              </div>
-
-              <p style="color: #6b7280; font-size: 13px; margin-top: 20px;">This code will expire in <strong>2 minutes</strong>.</p>
-              <p style="color: #9ca3af; font-size: 12px; margin-top: 30px;">Please do not share this code with anyone for security reasons.</p>
-            </div>
-
-            <div style="background-color: #f9fafb; text-align: center; padding: 14px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb;">
-              © ${new Date().getFullYear()} MFILTERIT. All rights reserved.
-            </div>
-          </div>
-        </div>
-      `,
+      html: layout(
+        "Your verification code",
+        `
+        <p style="margin:0 0 16px;">Use this one-time password to sign in to the Glo Nigeria Dashboard:</p>
+        <p style="margin:0 0 16px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;text-align:center;font-family:Consolas,Menlo,monospace;font-size:30px;letter-spacing:8px;font-weight:700;color:${GREEN};">${esc(
+          otp,
+        )}</p>
+        <p style="margin:0 0 6px;">This code expires in <strong>2 minutes</strong>.</p>
+        <p style="margin:0;font-size:12px;color:#6b7280;">Do not share this code with anyone. If you did not request it, ignore this email.</p>`,
+      ),
     };
 
     const info = await smtpTransport.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`[OTP_EMAIL_ERROR] Failed to send OTP email to ${email}:`, error);
+    console.error(
+      `[OTP_EMAIL_ERROR] Failed to send OTP email to ${email}:`,
+      error,
+    );
     throw error;
   }
 }
