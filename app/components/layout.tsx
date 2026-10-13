@@ -36,64 +36,72 @@ function DashboardHeader({
       : "Content Partner";
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-[76px] flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/95 sm:px-6">
-      <div className="flex min-w-0 items-center gap-3">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          aria-label={
-            state === "collapsed" ? "Expand sidebar" : "Collapse sidebar"
-          }
-          className="
-    shrink-0 rounded-xl
-    text-[#137B78]
-    hover:bg-[#137B78]/10
-    hover:text-[#137B78]
-    dark:text-[#65C5BF]
-    dark:hover:bg-[#137B78]/20
-    dark:hover:text-[#65C5BF]
-    transition-colors duration-200
-  "
-        >
-          {state === "collapsed" ? (
-            <PanelLeftOpen size={20} />
-          ) : (
-            <PanelLeftClose size={20} />
-          )}
-        </Button>
+   <header className="sticky top-0 z-30 relative overflow-hidden flex min-h-[76px] flex-wrap items-center justify-between gap-4 rounded-2xl bg-gradient-to-r from-teal-800 via-teal-700 to-cyan-700 px-4 py-4 text-white shadow-lg backdrop-blur-xl sm:px-6">
+  {/* Decorative Background Circles */}
+  <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border-[36px] border-white/10" />
+  <div className="pointer-events-none absolute -bottom-24 right-40 h-48 w-48 rounded-full bg-white/5" />
 
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-            Glo Nigeria
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Management Portal
-          </p>
-        </div>
+  {/* Left Section: Sidebar Toggle & Title */}
+  <div className="relative z-10 flex min-w-0 items-center gap-3">
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={toggleSidebar}
+      aria-label={
+        state === "collapsed" ? "Expand sidebar" : "Collapse sidebar"
+      }
+      className="
+        shrink-0 rounded-xl
+        text-white/90
+        hover:bg-white/15
+        hover:text-white
+        transition-colors duration-200
+      "
+    >
+      {state === "collapsed" ? (
+        <PanelLeftOpen size={20} />
+      ) : (
+        <PanelLeftClose size={20} />
+      )}
+    </Button>
+
+    <div className="min-w-0">
+      <p className="truncate text-base font-bold tracking-tight text-white sm:text-lg">
+        Glo Nigeria
+      </p>
+      <p className="text-xs text-teal-50 sm:text-sm">
+        Management Portal
+      </p>
+    </div>
+  </div>
+
+  {/* Right Section: Role Badge, Modal & Logout */}
+  <div className="relative z-10 flex flex-wrap items-center gap-2 sm:gap-3">
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+      <span className="h-2 w-2 rounded-full bg-emerald-400" />
+      {roleLabel}
+    </span>
+
+    {/* Custom Styled Password Change Button/Modal */}
+    {userEmail && (
+      <div className="[&>button]:rounded-xl [&>button]:bg-teal-900/40 [&>button]:border [&>button]:border-white/10 [&>button]:text-teal-100 [&>button]:hover:bg-cyan-600 [&>button]:hover:text-white [&>button]:transition-all">
+        <PasswordChangeModal userEmail={userEmail} />
       </div>
+    )}
 
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          {roleLabel}
-        </span>
-
-        {userEmail && <PasswordChangeModal userEmail={userEmail} />}
-
-        <Button
-          variant="ghost"
-          asChild
-          className="rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-gray-300 dark:hover:bg-red-950/30"
-        >
-          <Link to="/logout">
-            <LogOut size={16} className="mr-2" />
-            Logout
-          </Link>
-        </Button>
-      </div>
-    </header>
+    <Button
+      variant="ghost"
+      asChild
+      className="rounded-xl text-teal-50 hover:bg-red-500/20 hover:text-white transition-colors"
+    >
+      <Link to="/logout">
+        <LogOut size={16} className="mr-2" />
+        Logout
+      </Link>
+    </Button>
+  </div>
+</header>
   );
 }
 

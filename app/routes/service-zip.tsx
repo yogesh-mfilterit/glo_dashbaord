@@ -323,18 +323,6 @@ export default function ServiceZip() {
   return (
     <Layout userRole={userRole} userEmail={userEmail}>
       <main className="mx-auto max-w-7xl space-y-6 pb-8">
-        {/* hero */}
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-800 via-teal-700 to-cyan-700 px-6 py-7 text-white shadow-lg sm:px-8">
-          <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border-[36px] border-white/10" />
-          <div className="pointer-events-none absolute -bottom-24 right-40 h-48 w-48 rounded-full bg-white/5" />
-          <div className="relative max-w-2xl">
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Partner ZIP Upload</h1>
-            <p className="mt-2 text-sm leading-6 text-teal-50 sm:text-base">
-              Upload a custom landing-page ZIP for a service, preview it, and manage every service that uses a custom UI.
-            </p>
-          </div>
-        </section>
-
         {/* tabs */}
         <nav className="flex gap-6 border-b border-gray-200 dark:border-gray-800" aria-label="Partner ZIP sections">
           {([
