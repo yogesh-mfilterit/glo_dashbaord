@@ -10,6 +10,7 @@ const TTL = 30 * 60 * 1000;
 
 export type Preview = {
   id: string;
+  serviceId: string;
   folder: string;
   cpName: string;
   serviceName: string;

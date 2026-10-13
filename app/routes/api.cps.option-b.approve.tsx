@@ -26,6 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ...(existing || {}), // keep price/period/etc. from earlier saves
       id: p.folder,
       cpId: p.folder,
+      serviceId: p.serviceId,
       cpName: p.cpName,
       serviceName: p.serviceName,
       method: 'B',

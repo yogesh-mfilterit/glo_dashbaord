@@ -15,6 +15,8 @@ type Status = 'draft' | 'uat' | 'live';
 
 type ZipCheck = { ok: boolean; warn?: boolean; message: string };
 
+type ServiceOption = { serviceId: string; serviceName: string; cpName: string };
+
 type PreviewResult = {
   previewId: string;
   previewBaseUrl?: string;
@@ -26,6 +28,7 @@ type PreviewResult = {
 type CustomService = {
   id?: string;
   cpId?: string;
+  serviceId?: string;
   method: 'A' | 'B';
   status?: Status;
   cpName: string;
@@ -91,6 +94,13 @@ export default function ServiceZip() {
   const [dragging, setDragging] = useState(false);
   const [reuploadOf, setReuploadOf] = useState<CustomService | null>(null);
 
+  // ---- service id dropdown (from DynamoDB glo-nigeria-dev-serviceId-details) ----
+  const [options, setOptions] = useState<ServiceOption[]>([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const [optionsError, setOptionsError] = useState('');
+  const [comboOpen, setComboOpen] = useState(false);
+  const [comboQuery, setComboQuery] = useState('');
+
   // ---- manage tab ----
   const [items, setItems] = useState<CustomService[]>([]);
   const [listLoading, setListLoading] = useState(false);
@@ -105,6 +115,34 @@ export default function ServiceZip() {
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToastMsg(''), 3000);
   }, []);
+
+  /* ---------------- service ids from DynamoDB ---------------- */
+  const loadOptions = useCallback(async (refresh = false) => {
+    setOptionsLoading(true);
+    setOptionsError('');
+    try {
+      const j = await api(`/cp-service-ids${refresh ? '?refresh=1' : ''}`);
+      setOptions((j.items || []) as ServiceOption[]);
+    } catch (e) {
+      setOptionsError((e as Error).message);
+      setOptions([]);
+    } finally {
+      setOptionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadOptions();
+  }, [loadOptions]);
+
+  const selectedOption = useMemo(() => options.find((o) => o.serviceId === serviceId.trim()), [options, serviceId]);
+
+  const filteredOptions = useMemo(() => {
+    const q = comboQuery.trim().toLowerCase();
+    return options.filter(
+      (o) => !q || o.serviceId.toLowerCase().includes(q) || o.serviceName.toLowerCase().includes(q) || o.cpName.toLowerCase().includes(q),
+    );
+  }, [options, comboQuery]);
 
   /* ---------------- manage: load list ---------------- */
   const loadList = useCallback(async () => {
@@ -129,7 +167,7 @@ export default function ServiceZip() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return items.filter(
-      (s) => !q || s.serviceName?.toLowerCase().includes(q) || s.cpName?.toLowerCase().includes(q) || s.folder?.toLowerCase().includes(q),
+      (s) => !q || s.serviceId?.toLowerCase().includes(q) || s.serviceName?.toLowerCase().includes(q) || s.cpName?.toLowerCase().includes(q) || s.folder?.toLowerCase().includes(q),
     );
   }, [items, search]);
 
@@ -183,7 +221,7 @@ export default function ServiceZip() {
   const startReupload = (s: CustomService) => {
     resetUploadForm();
     setReuploadOf(s);
-    setServiceId(s.serviceName || '');
+    setServiceId(s.serviceId || s.serviceName || '');
     setMessage('');
     setTab('upload');
   };
@@ -216,6 +254,7 @@ export default function ServiceZip() {
 
   const buildPreview = async () => {
     if (!serviceId.trim()) return setMessage('Service ID is required.');
+    if (!reuploadOf && !selectedOption) return setMessage('Select a Service ID from the list.');
     if (!zipFile) return setMessage('Choose a ZIP package before building the preview.');
 
     setLoading(true);
@@ -334,19 +373,79 @@ export default function ServiceZip() {
                 )}
 
                 <div>
-                  <label htmlFor="serviceId" className="mb-2 block text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    Service ID <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    id="serviceId"
-                    type="text"
-                    value={serviceId}
-                    onChange={(e) => setServiceId(e.target.value)}
-                    placeholder="Enter unique service ID"
-                    autoComplete="off"
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                  />
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">The package will be associated exclusively with this Service ID.</p>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label htmlFor="serviceId" className="block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      Service ID <span className="text-rose-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void loadOptions(true)}
+                      disabled={optionsLoading}
+                      className="text-xs font-semibold text-teal-700 hover:underline disabled:opacity-50 dark:text-teal-300"
+                    >
+                      {optionsLoading ? 'Loading…' : 'Reload list'}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      id="serviceId"
+                      type="text"
+                      role="combobox"
+                      aria-expanded={comboOpen}
+                      aria-controls="serviceIdList"
+                      value={comboOpen ? comboQuery : serviceId}
+                      disabled={!!reuploadOf}
+                      onFocus={() => { setComboQuery(''); setComboOpen(true); }}
+                      onBlur={() => setComboOpen(false)}
+                      onChange={(e) => { setComboQuery(e.target.value); setComboOpen(true); }}
+                      placeholder={optionsLoading ? 'Loading service IDs…' : 'Search and select a Service ID'}
+                      autoComplete="off"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:disabled:bg-gray-900"
+                    />
+                    {comboOpen && !reuploadOf && (
+                      <ul
+                        id="serviceIdList"
+                        role="listbox"
+                        className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                      >
+                        {filteredOptions.slice(0, 100).map((o) => (
+                          <li key={o.serviceId} role="option" aria-selected={o.serviceId === serviceId}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault(); // keep input focus so onBlur does not close before click
+                                setServiceId(o.serviceId);
+                                setComboOpen(false);
+                              }}
+                              className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm hover:bg-teal-50 dark:hover:bg-gray-800 ${
+                                o.serviceId === serviceId ? 'bg-teal-50 dark:bg-gray-800' : ''
+                              }`}
+                            >
+                              <span className="font-mono text-gray-900 dark:text-white">{o.serviceId}</span>
+                              <span className="truncate text-xs text-gray-500">{[o.serviceName, o.cpName].filter(Boolean).join(' · ')}</span>
+                            </button>
+                          </li>
+                        ))}
+                        {!filteredOptions.length && (
+                          <li className="px-4 py-3 text-sm text-gray-500">{optionsLoading ? 'Loading…' : 'No matching Service ID'}</li>
+                        )}
+                        {filteredOptions.length > 100 && (
+                          <li className="px-4 py-2 text-xs text-gray-400">Showing first 100 — type to narrow down</li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                  {optionsError ? (
+                    <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">Could not load Service IDs: {optionsError}</p>
+                  ) : selectedOption ? (
+                    <p className="mt-2 text-xs text-teal-700 dark:text-teal-300">
+                      {[selectedOption.serviceName, selectedOption.cpName].filter(Boolean).join(' · ') || 'Service found'}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      {options.length ? `${options.length} service IDs loaded. ` : ''}The package will be associated exclusively with this Service ID.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -527,7 +626,7 @@ export default function ServiceZip() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-500 dark:border-gray-800">
-                      <th className="px-5 py-3 font-semibold"> Service ID</th>
+                      <th className="px-5 py-3 font-semibold">Service ID</th>
                       <th className="px-5 py-3 font-semibold">Package folder</th>
                       <th className="px-5 py-3 font-semibold">Pages</th>
                       <th className="px-5 py-3 font-semibold">Status</th>
@@ -539,8 +638,10 @@ export default function ServiceZip() {
                     {filtered.map((s) => (
                       <tr key={keyOf(s)} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/40">
                         <td className="px-5 py-3">
-                          <div className="font-semibold text-gray-900 dark:text-white">{s.serviceName}</div>
-                          {s.cpName && s.cpName !== s.serviceName && <div className="text-xs text-gray-500">{s.cpName}</div>}
+                          <div className="font-semibold text-gray-900 dark:text-white">{s.serviceId || s.serviceName}</div>
+                          {(s.serviceName && s.serviceName !== (s.serviceId || s.serviceName)) || s.cpName ? (
+                            <div className="text-xs text-gray-500">{[s.serviceName !== s.serviceId ? s.serviceName : '', s.cpName].filter(Boolean).join(' · ')}</div>
+                          ) : null}
                         </td>
                         <td className="px-5 py-3 font-mono text-xs text-gray-600 dark:text-gray-300">{s.folder || '—'}</td>
                         <td className="px-5 py-3 font-mono text-xs text-gray-600 dark:text-gray-300">{s.pages?.length ? s.pages.join(', ') : '—'}</td>
