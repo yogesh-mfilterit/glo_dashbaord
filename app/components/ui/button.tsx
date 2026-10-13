@@ -5,27 +5,54 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../../lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  [
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap",
+    "rounded-lg text-sm font-medium",
+    "transition-all duration-300 ease-in-out",
+    "focus-visible:outline-none focus-visible:ring-2",
+    "focus-visible:ring-[#137B78] focus-visible:ring-offset-2",
+    "focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900",
+    "disabled:pointer-events-none disabled:opacity-50",
+    "active:scale-[0.97]",
+    "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  ].join(" "),
   {
     variants: {
       variant: {
         default:
-          "bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:shadow-md active:scale-95",
+          "bg-[#137B78] text-white shadow-sm hover:bg-[#106663] hover:shadow-md",
+
         destructive:
-          "bg-red-600 text-white shadow-sm hover:bg-red-700 hover:shadow-md active:scale-95",
+          "bg-red-600 text-white shadow-sm hover:bg-red-700 hover:shadow-md",
+
         outline:
-          "border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-md active:scale-95",
+          "border border-gray-200 bg-white text-[#137B78] shadow-sm " +
+          "hover:border-[#137B78]/40 hover:bg-[#137B78]/5 hover:shadow-md " +
+          "dark:border-gray-700 dark:bg-gray-900 dark:text-[#65C5BF] " +
+          "dark:hover:border-[#65C5BF]/40 dark:hover:bg-[#137B78]/15",
+
         secondary:
-          "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-200 dark:hover:bg-gray-700 hover:shadow-md active:scale-95",
-        ghost: 
-          "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:scale-95",
-        link: 
-          "text-blue-600 dark:text-blue-400 underline-offset-4 hover:underline",
+          "bg-gray-100 text-gray-700 shadow-sm hover:bg-[#137B78]/10 " +
+          "hover:text-[#137B78] hover:shadow-md " +
+          "dark:bg-gray-800 dark:text-gray-300 " +
+          "dark:hover:bg-[#137B78]/20 dark:hover:text-[#65C5BF]",
+
+        ghost:
+          "text-gray-700 hover:bg-[#137B78]/10 hover:text-[#137B78] " +
+          "dark:text-gray-300 dark:hover:bg-[#137B78]/20 " +
+          "dark:hover:text-[#65C5BF]",
+
+        link:
+          "text-[#137B78] underline-offset-4 hover:underline " +
+          "dark:text-[#65C5BF]",
+
         success:
-          "bg-green-600 text-white shadow-sm hover:bg-green-700 hover:shadow-md active:scale-95",
+          "bg-[#137B78] text-white shadow-sm hover:bg-[#106663] hover:shadow-md",
+
         warning:
-          "bg-yellow-600 text-white shadow-sm hover:bg-yellow-700 hover:shadow-md active:scale-95",
+          "bg-yellow-600 text-white shadow-sm hover:bg-yellow-700 hover:shadow-md",
       },
+
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
@@ -34,6 +61,7 @@ const buttonVariants = cva(
         xl: "h-12 rounded-lg px-10 text-base",
       },
     },
+
     defaultVariants: {
       variant: "default",
       size: "default",
@@ -50,15 +78,17 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        className={cn(buttonVariants({ variant, size, className }))}
         {...props}
       />
     )
   }
 )
+
 Button.displayName = "Button"
 
 export { Button, buttonVariants }

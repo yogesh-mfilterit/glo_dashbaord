@@ -1,13 +1,26 @@
 // DynamoDB table names
+// export const DYNAMODB_TABLES = {
+//   DASHBOARD_LOGINS: "mtn-nigeria-dev-dashboard-logins",
+//   CP_DETAILS: "mtn-nigeria-dev-cp-details",
+//   SERVICE_ID_DETAILS: "mtn-nigeria-dev-serviceId-details",
+//   CP_PRODUCTS: "mtn-nigeria-dev-cp-products",
+//   TRANSACTIONS: "mtn-nigeria-dev-transactions",
+//   DASHBOARD_LOG: "mtn-nigeria-dev-dashboard-logs",
+//   DASHBOARD_REAL_TIME_COUNTERS: "mtn-nigeria-dev-realtime-dashboard-counters",
+//   CP_ONBOARD_APPROVAL: "mtn-nigeria-dev-cp-onboard-status",
+//   // Add other table names here as needed
+// };
+
+
 export const DYNAMODB_TABLES = {
-  DASHBOARD_LOGINS: "mtn-nigeria-dev-dashboard-logins",
-  CP_DETAILS: "mtn-nigeria-dev-cp-details",
-  SERVICE_ID_DETAILS: "mtn-nigeria-dev-serviceId-details",
-  CP_PRODUCTS: "mtn-nigeria-dev-cp-products",
-  TRANSACTIONS: "mtn-nigeria-dev-transactions",
-  DASHBOARD_LOG: "mtn-nigeria-dev-dashboard-logs",
-  DASHBOARD_REAL_TIME_COUNTERS: "mtn-nigeria-dev-realtime-dashboard-counters",
-  CP_ONBOARD_APPROVAL: "mtn-nigeria-dev-cp-onboard-status",
+  DASHBOARD_LOGINS: "glo-nigeria-dev-dashboard-logins",
+  CP_DETAILS: "glo-nigeria-dev-cp-details",
+  SERVICE_ID_DETAILS: "glo-nigeria-dev-serviceId-details",
+  CP_PRODUCTS: "glo-nigeria-dev-cp-products",
+  TRANSACTIONS: "glo-nigeria-dev-transactions",
+  DASHBOARD_LOG: "glo-nigeria-dev-dashboard-logs",
+  DASHBOARD_REAL_TIME_COUNTERS: "glo-nigeria-dev-realtime-dashboard-counters",
+  CP_ONBOARD_APPROVAL: "glo-nigeria-dev-cp-onboard-status",
   // Add other table names here as needed
 };
 
