@@ -109,7 +109,7 @@ export async function getTransactionByMfId(mfId: string) {
       JSON_EXTRACT(fullRecord,'$.sdpResponse')              AS sdpResponse,
       JSON_EXTRACT(fullRecord,'$.callbackData')             AS callbackData
 
-    FROM nigeria_fullRecord
+    FROM glo_nigeria_fullRecord
     WHERE mfId = ?
     LIMIT 1
   `;
@@ -243,7 +243,7 @@ export async function getTransactionsByMsisdnAndDateRangeWithCpidFilter(
       JSON_EXTRACT(fullRecord,'$.sdpResponse')  AS sdpResponse,
       JSON_EXTRACT(fullRecord,'$.callbackData') AS callbackData
 
-    FROM nigeria_fullRecord FORCE INDEX (idx_msisdn)
+    FROM glo_nigeria_fullRecord FORCE INDEX (idx_msisdn)
 
     WHERE
       msisdn = ?

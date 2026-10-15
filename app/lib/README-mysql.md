@@ -214,7 +214,7 @@ export const MYSQL_CONFIG = {
   HOST: "database-1.cwwjhfm2gg2l.ap-south-1.rds.amazonaws.com",
   USER: "admin",
   PASSWORD: "HWasok4h4VHRPzz065tx",
-  DATABASE: "nigeria_data",
+  DATABASE: "globacom_nigeria",
   TABLE: "live_data",
   CONNECTION_LIMIT: 10,
   QUEUE_LIMIT: 0,

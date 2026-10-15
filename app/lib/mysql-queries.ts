@@ -819,7 +819,7 @@ export async function getTop5BlockedTrafficSourceQueryy(
 
 export async function getFullTransactionByMfId(mysqlService: any, mfId: string) {
   const query = `
-    SELECT * FROM nigeria_fullRecord WHERE mfId = ?
+    SELECT * FROM glo_nigeria_fullRecord WHERE mfId = ?
   `;
   const results = await mysqlService.query(query, [mfId]);
 
@@ -833,7 +833,7 @@ export async function getFullTransactionBySequenceNo(
   where: undefined | string = undefined,
 ) {
   let query = `
-    SELECT * FROM nigeria_fullRecord WHERE sdp_transaction_id = ?
+    SELECT * FROM glo_nigeria_fullRecord WHERE sdp_transaction_id = ?
   `;
   if (where) {
     query += ` AND ${where}`;
@@ -852,9 +852,9 @@ export async function updateManualCallback(mysqlService: any, mfId: string, cb: 
     let results;
     try {
       await connection.beginTransaction();
-      // First update nigeria_fullRecord
+      // First update glo_nigeria_fullRecord
       const updateFullRecordQuery = `
-        UPDATE nigeria_fullRecord  
+        UPDATE glo_nigeria_fullRecord  
         SET fullRecord = CAST(? AS JSON)
         WHERE mfId = ?
       `;
@@ -862,13 +862,13 @@ export async function updateManualCallback(mysqlService: any, mfId: string, cb: 
       // cb is a JSON object, so we need to stringify it before storing in the DB
       results = await connection.query(updateFullRecordQuery, [JSON.stringify(cb), mfId]);
 
-      // If the first update was successful, update transactions_nigeria as well.
+      // If the first update was successful, update glo_transactions_nigeria as well.
       if (results.affectedRows === 0) {
-        throw new Error('Failed to update nigeria_fullRecord');
+        throw new Error('Failed to update glo_nigeria_fullRecord');
       }
       const cb_sequenceNo = cb?.callbackData?.sequenceNo;
       const updateTxnQuery = `
-          UPDATE transactions_nigeria 
+          UPDATE glo_transactions_nigeria 
           SET cb_sequenceNo = ?, cb_result = 'success'
           WHERE mfId = ?
         `;
